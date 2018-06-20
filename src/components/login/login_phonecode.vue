@@ -21,7 +21,7 @@
       </div>
     </form>
     <div class="login-box">
-      <div class="login-btn" v-on:click="LoginVerifyCode()">
+      <div class="login-btn" @click="LoginVerifyCode">
         登录
       </div>
     </div>
@@ -101,13 +101,18 @@
   .login{
     min-height: 100%;
     max-height: 100%;
+    box-sizing: border-box;
     width: 100%;
-    background: #fff url('../../common/images/login-footer.png') no-repeat bottom ;
-    background-size: 100% auto;
+    background: #fff url('http://202.119.65.28:8080/meeting_mall/img/loginfooter.png') no-repeat bottom ;
+    background-size: 100% 40vh;
   }
   .login-box{
+    /*position: absolute;*/
+    /*left: 0;*/
+    /*right: 0;*/
+    /*bottom: 20vh;*/
     width: input-box-w+4;
-    margin: 40% auto 0;
+    margin: 10vh auto 0;
     display:flex;
     .login-btn{
       height: 35px;
@@ -125,19 +130,20 @@
 <style scoped lang="stylus" rel="stylesheet/stylus">
   input-box-w = 72%
   .logo-icon{
-    height: 35%;
-    margin-top: 14%;
+    height: 30vh;
+    padding-top: 10vh;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     img{
       width: 50%;
+      max-width: 180px;
     }
   }
   .input-box{
     min-height: 40%;
-    margin-top: 14%;
+    margin-top: 10vh;
     width: 100%;
     .input-line{
       width:input-box-w;
@@ -147,7 +153,6 @@
       display: flex;
       align-items: center;
       position: relative;
-      display:flex;
       .icon{
         width: 13%;
         font-size: 0.7rem;
@@ -171,7 +176,7 @@
       }
     }
     .input-line:nth-child(2){
-      margin-top: 4%;
+      margin-top: 4vh;
     }
     .input-other{
       width: input-box-w;
@@ -179,7 +184,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin: 2% auto 0;
+      margin: 2vh auto 0;
       div{
         font-size: 0.38rem;
         color: #565656;

@@ -12,7 +12,7 @@
       </div>
       <div class="input-line">
         <i class="icon iconfont icon-biyan"></i>
-        <input type="text" placeholder="请输入密码" v-model="inputtext.password">
+        <input type="password" placeholder="请输入密码" v-model="inputtext.password">
       </div>
       <div class="input-other">
         <div class="pwd-to-login" @click="Phonecode_login">验证码登录</div>
@@ -20,7 +20,7 @@
       </div>
     </form>
     <div class="login-box">
-      <div class="login-btn" v-on:click="LoginVerifyCode()">
+      <div class="login-btn" v-on:click="LoginVerifyCode">
         登录
       </div>
     </div>
@@ -30,18 +30,20 @@
 <script type='text/ecmascript-6'>
 import { needMixin } from 'common/js/mixin'
 import HeaderLogin from 'base/header/header-login'
-import { Toast,Indicator } from 'mint-ui'
-import { UserLogin,ConfirmConferenceOrder } from '@/api/api.js' // 获取数据接口采用多条http请求
+import { Toast }  from 'mint-ui'
+import { UserLogin } from '@/api/api.js' // 获取数据接口采用多条http请求
 export default {
   mixins: [needMixin],
   components: {
     HeaderLogin,
-    Toast,
-    Indicator
+    Toast
   },
   data () {
     return {
-      inputtext:{}
+      inputtext:{
+        username:'admin',
+        password:'123123'
+      }
     }
   },
   created () {
@@ -62,23 +64,35 @@ export default {
         });
         return;
       }
-      let query = {
+//      this.$router.push({ path: '/home'});
+//      var list = {
+//        username:this.inputtext.username,
+//        password:this.inputtext.password
+//      }
+//      let query =Object.assign({},list)
+      let query={
         username:this.inputtext.username,
         password:this.inputtext.password
       }
+      console.log(query)
       UserLogin(query).then((res) => {
+        alert(JSON.stringify(res))
         if (res.result === true && res.dataList) {
-          Indicator.open();
+          sessionStorage.setItem('user',JSON.stringify(res.dataList))
+          Toast({
+            message: '登录成功',
+            duration: 500
+          });
+          this.$router.push({ path: '/home'});
         } else {
           Toast({
-            message: res.message,
-            duration: 1000
+            message: '登录失败',
+            duration: 500
           });
-//          this.$router.push({ path: '/home'});
         }
       })
     },
-//    点击进入页面登录页
+//    点击进入验证码登录页
     Phonecode_login (){
       this.$router.push({  path: '/Login_phonecode'});
     }
@@ -93,13 +107,18 @@ export default {
   .login{
     min-height: 100%;
     max-height: 100%;
+    box-sizing: border-box;
     width: 100%;
-    background: #fff url('../../common/images/login-footer.png') no-repeat bottom ;
-    background-size: 100% auto;
+    background: #fff url('http://202.119.65.28:8080/meeting_mall/img/loginfooter.png') no-repeat bottom ;
+    background-size: 100% 40vh;
   }
   .login-box{
+    /*position: absolute;*/
+    /*left: 0;*/
+    /*right: 0;*/
+    /*bottom: 20vh;*/
     width: input-box-w+4;
-    margin: 40% auto 0;
+    margin: 10vh auto 0;
     display:flex;
     .login-btn{
       height: 35px;
@@ -117,19 +136,20 @@ export default {
 <style scoped lang="stylus" rel="stylesheet/stylus">
   input-box-w = 72%
   .logo-icon{
-    height: 35%;
-    margin-top: 14%;
+    height: 30vh;
+    padding-top: 10vh;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     img{
       width: 50%;
+      max-width: 180px;
     }
   }
   .input-box{
-    min-height: 40%;
-    margin-top: 14%;
+    min-height: 30vh;
+    margin-top: 10vh;
     width: 100%;
     .input-line{
       width:input-box-w;

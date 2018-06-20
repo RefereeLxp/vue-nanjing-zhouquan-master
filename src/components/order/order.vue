@@ -15,20 +15,33 @@ import HeaderPub from 'base/header/header-pub'
 export default {
   mixins: [needMixin],
   components: {
-    HeaderPub
+    HeaderPub,
   },
   data () {
     return {
-      navArray: [{'id': 1, 'name': '全部'}, {'id': 2, 'name': '待支付'}, {'id': 3, 'name': '审核中'}, {'id': 4, 'name': '待发货'}, {'id': 5, 'name': '待收货'}], // 导航选项
-      navActive: 1 // 默认导航的id
+      navArray: [
+        {'id': 1, 'name': '待支付'},
+        {'id': 2, 'name': '审核中'},
+        {'id': 3, 'name': '待参会'},
+        {'id': 4, 'name': '已完成'},
+        {'id': 6, 'name': '审核未通过'},
+        {'id': 5, 'name': '退款'}
+      ], // 导航选项
+      navActive: 1,// 默认导航的id
+      optionUserInfo:{}, //用户信息
+      orderData:{},  //订单信息
     }
   },
   created () {
+    this._getAllData()
   },
   methods: {
     addPath (item) {
       this.navActive = item.id
       this.$router.push({path: '/order', query: item}) // 在根据后台需要传递参数在子路由中数据处理 这边可以不用动
+    },
+    _getAllData(){
+
     }
   },
   watch: {

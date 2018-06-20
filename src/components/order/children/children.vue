@@ -1,47 +1,62 @@
 <template>
   <div class="order-children">
     <div class="order-box" v-if="orderData.length >= 0 && firstLoading">
-      <div class="order-list">
+      <div class="order-list"  v-for="(item, index) in orderData">
         <div class="order-item">
           <div class="o-status">
-            <p class="le">
+            <p class="le" v-if="state==1">
               等待买家付款
             </p>
-            <p class="ri">
+            <p class="ri" v-if="state==1">
               23时57分后取消订单
+            </p>
+            <p class="le"  v-if="state==2">
+              审核中，请耐心等待
+            </p>
+            <p class="le"  v-if="state==3">
+              请及时参会
             </p>
           </div>
           <div class="o-goods-box">
             <div class="img-box">
+              <img :src="item.conference_img" alt="">
             </div>
             <div class="info-box">
-              <h2>2018区块链拥抱未来全球高峰论坛入场票</h2>
-              <div class="tips">数量：x2&nbsp;&nbsp;票种：A座</div>
-              <div class="price">¥3000</div>
+              <h2>{{item.conference_name}}</h2>
+              <div class="tips">数量：x{{item.conference_count}}&nbsp;&nbsp;票种：{{item.price_title}}</div>
+              <div class="price">¥{{item.conference_price}}</div>
             </div>
           </div>
           <div class="o-btn">
-            <a class="btn red fl">去支付</a>
-            <a class="btn red fl">催单</a>
+            <a class="btn fl" @click="DeleteOrders(item.OrderId)" v-if="state==1">删除订单</a>
+            <!--<a class="btn red fl">催单</a>-->
             <!-- <a class="btn red fl">再次购买</a> -->
-            <a class="btn red fr">评价</a>
-            <a class="btn fr">删除订单</a>
+            <!--<a class="btn red fr">评价</a>-->
+            <!--<a class="btn red fr" @click="FindOrders(item.OrderId)  v-if="state==3||state==4">查看详情</a>-->
+            <a class="btn red fr" @click="FindOrders(item.OrderId)"  v-if="state==3||state==4">查看详情</a>
+            <a class="btn red fr"  @click="PayOrders(item.ForeignOrderCode,conference_price)" v-if="state==1">去支付</a>
           </div>
         </div>
       </div>
       <LoadScroll :loadType="loadType"></LoadScroll>
     </div>
-    <div class="nothing" v-if="orderData.length === 0 && firstLoading">
+    <div class="nothing" v-if="JSON.stringify(orderData)=='{}' && firstLoading">
       <!-- 空的情况 -->
+      <div style="width: 100%;margin: 10px 0; text-align: center">您还没有相关的订单</div>
     </div>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
 import LoadScroll from 'base/load-scroll/load-scroll'
+import { MessageBox } from 'mint-ui';
+import { FindOrdersByUserId,DeleteOrdersByOrderId,FindOrdersByOrderId } from '@/api/api.js'
 export default {
   components: {
-    LoadScroll
+    LoadScroll,
+    MessageBox,
+    FindOrdersByUserId,
+    DeleteOrdersByOrderId
   },
   data () {
     return {
@@ -50,8 +65,10 @@ export default {
       },
       firstLoading: false, // 进入时页面是否加载完成
       loadType: 1, // 加载更多标签
-      orderData: [{}, {}], // 订单
-      statusText: '等待买家付款'
+      orderData: {}, // 订单
+      state:0,
+      statusText: '等待买家付款',
+      delText:'确定删除该订单？'
     }
   },
   created () {
@@ -70,13 +87,30 @@ export default {
   },
   methods: {
     getData () {
-      let routeData = this.$route.query
-      this.queryData = Object.assign({}, this.queryData, routeData)
-      console.log(this.queryData)
       setTimeout(() => {
-        this.firstLoading = true // 首屏幕数据加载完之后，改为true
-        this.loading.close()
-      }, 500)
+        let routeData = this.$route.query
+        this.orderData={}
+        this.state=(routeData.id==null?1:routeData.id);
+        this.queryData = Object.assign({}, this.queryData, routeData)
+        this.optionUserInfo=JSON.parse(sessionStorage.getItem("user"))
+        var query={orderStatus:routeData.id},token=this.optionUserInfo.user_token;
+        FindOrdersByUserId(query,token).then((res) => {
+          if (res.result === true && res.dataList) {
+            this.orderData=res.dataList
+            console.log(res.dataList)
+          } else {
+//          this.toast(res.dataList.massage)
+//          setTimeout(() => {
+////              this.$router.go(-1)
+//          }, 2000)
+          }
+        })
+        setTimeout(() => {
+          this.firstLoading = true // 首屏幕数据加载完之后，改为true
+          this.loading.close()
+        }, 500)
+      }, 100)
+
     },
     resetDataAct () { // 重置数据
       this.queryData = { // 默认查询首页数据
@@ -85,6 +119,43 @@ export default {
       this.firstLoading = false // 进入时页面是否加载完成
       this.loadType = 1 // 加载更多标签
       this.orderData = [{}, {}] // 订单
+    },
+//    删除订单
+    DeleteOrders(id) {
+      MessageBox.confirm(this.delText).then(action => {
+        var query={OrderId:id},token=this.optionUserInfo.user_token;
+        DeleteOrdersByOrderId(query,token).then((res) => {
+          if (res.result === true) {
+            this.toast(res.message)
+          } else {
+            this.toast(res.massage)
+//            setTimeout(() => {
+//  //              this.$router.go(-1)
+//            }, 2000)
+          }
+        })
+      });
+    },
+//    未完成订单支付
+    PayOrders(order_sn,money){
+      var query={order_sn:order_sn,money:money}
+      this.$router.push({path: '/payment',query:query})
+    },
+    FindOrders(id){
+      var query={id:id}
+      this.$router.push({path: '/order-info',query:query})
+//      var query={orderStatus:routeData.id},token=this.optionUserInfo.user_token;
+//      FindOrdersByUserId(query,token).then((res) => {
+//        if (res.result === true && res.dataList) {
+//          this.orderData=res.dataList
+//          console.log(res.dataList)
+//        } else {
+////          this.toast(res.dataList.massage)
+////          setTimeout(() => {
+//////              this.$router.go(-1)
+////          }, 2000)
+//        }
+//      })
     }
   },
   watch: {
@@ -168,4 +239,15 @@ export default {
           &.fr
             float: right
             margin-left: 10px
+
+  .img-box{
+    align-items: center;
+    display:flex;
+    img{
+      display: block;
+      width: 100%;
+      /*height: 100%;*/
+      background: #f5f5f5;
+    }
+  }
 </style>

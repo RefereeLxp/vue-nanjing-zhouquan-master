@@ -2,34 +2,37 @@
   <div class="po-box">
     <div class="po-header" @touchmove.prevent>
       <div class="img-box">
-        <img src="http://img10.360buyimg.com/n7/jfs/t15772/297/2379608599/113987/f4771417/5ab0709fN7554e959.jpg">
+        <img :src="goodInfo.main_picture">
       </div>
       <div class="info-box">
-        <h2 class="name">2018区块链拥抱未来全球高峰论坛</h2>
-        <div class="price">¥45.5</div>
-        <div class="kucun">库存12334件</div>
+        <h2 class="name">{{goodInfo.conference_name}}</h2>
+        <!--<div class="price">¥45.5</div>-->
+        <div class="kucun">{{goodInfo.capacity_number}}</div>
       </div>
     </div>
     <div class="po-body">
       <div class="spec-item">
-        <span class="name">商品</span>
+        <span class="name">票价类型</span>
         <div class="box">
-          <a class="on">江南</a>
-          <a>致青春</a>
-          <a>致青春</a>
-          <a>致青春</a>
-          <a>致青春</a>
-          <a>致青春</a>
-          <a>致青春致青春致青春</a>
+          <div class="type-box" :class="chooseId==item.price_id ? 'on' : '' "
+             @click="ChoosePrice(item.price_id,item.current_price,item.price_title,goodInfo.conference_id,goodInfo.conference_name,goodInfo.main_picture)"
+             v-for="item in goodInfo.priceList"
+          >
+            <div class="price">
+              <p>现价 ¥{{item.current_price}}</p>
+              <p v-if="item.original_price!=item.current_price">原价 <i>¥{{item.original_price}}</i></p>
+            </div>
+            <div>{{item.price_title}}</div>
+          </div>
         </div>
       </div>
-      <div class="spec-item">
-        <span class="name">商品</span>
-        <div class="box">
-          <a>江南</a>
-          <a>致青春</a>
-        </div>
-      </div>
+      <!--<div class="spec-item">-->
+        <!--<span class="name">商品</span>-->
+        <!--<div class="box">-->
+          <!--<a>江南</a>-->
+          <!--<a>致青春</a>-->
+        <!--</div>-->
+      <!--</div>-->
       <div class="spec-item special">
         <span class="name">数量</span>
         <div class="box">
@@ -50,20 +53,23 @@
 </template>
 
 <script type="text/ecmascript-6">
+import { Toast }  from 'mint-ui'
 export default {
   props: {
-    headerTitle: {
-      type: String,
-      dafault: ''
+    goodInfo: {
+      type: Object,
+      dafault:{}
     }
   },
   data () {
     return {
       choosedData: {}, // 购买的数量与规格合集
-      counter: 1
+      counter: 1,
+      chooseId:-1
     }
   },
   created () {
+    console.log(this.goodInfo)
   },
   methods: {
     minNum () { // 数量操作
@@ -73,8 +79,28 @@ export default {
       this.counter = this.counter + 1
     },
     emitEvent () { // 传递事件给父组建 在父组建上进行购买数据交互 规格数据得根据后台如何设计来进行传值先空着
-      this.choosedData = Object.assign({}, {'num': this.counter})
+//      this.choosedData = Object.assign({}, {'num': this.counter})
+      console.log()
+      if(this.choosedData.price_id==''||this.chooseId==-1){
+        Toast({
+          message: '请选择你要购买的类型',
+          duration: 1000
+        });
+        return
+      }
+      this.choosedData.counts=this.counter
       this.$emit('emitEvent', this.choosedData)
+    },
+    ChoosePrice (price_id,original_price,price_title,conference_id,conference_name,main_picture) { //选择产品类型
+      this.chooseId=price_id
+      this.choosedData={
+        price_id:price_id,
+        original_price:original_price,
+        price_title:price_title,
+        conference_id:conference_id,
+        conference_name:conference_name,
+        main_picture:main_picture
+      }
     }
   },
   watch: {
@@ -147,28 +173,35 @@ export default {
       .name
         font-size: 14px
         color: #adadad
-        line-height: 26px
+        line-height: 28px
         margin-right: 12px
       .box
         flex: 1
         font-size: 0
-        a
+        .type-box
           color: #adadad
-          display: inline-block
-          min-width: 80px
+          width: 100%
           margin-right: 14px
-          height: 26px
           border: 1px solid #dddddd; /* no */
-          line-height: 24px
           font-size: 14px
-          text-align: center
+          min-height:30px
           border-radius: 3px
-          padding: 0 15px
+          padding: 2px 15px
           margin-bottom: 9px
+          display:flex
+          justify-content: space-between
+          align-items: center
           &.on
-            background: #ff3636
-            color: #fff
-            border-color: #ff3636
+           background: #ff3636
+           border-color: #ff3636
+          .price
+            p
+              line-height: 18px
+              height: 18px
+              i
+                font-style:normal
+                text-decoration:line-through
+
       &.special
         padding-bottom: 20px
         .number
@@ -215,4 +248,17 @@ export default {
     font-size: 16px
     font-weight: 500
     color: #fff
+
+.type-box.on {
+  div{
+    color: #fff;
+  }
+  p{
+      color: #fff;
+    i{
+      color: #fff;
+    }
+  }
+}
+
 </style>

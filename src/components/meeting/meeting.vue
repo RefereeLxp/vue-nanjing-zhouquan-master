@@ -5,14 +5,18 @@
         <a class="share-tip"></a>
       </header-pub>
       <div class="meeting-banner">
-        <div class="tips-live" v-if="Number(meetingData.type_id) === 1"></div>
+        <div class="tips-live scene" v-if="Number(meetingData.type_id) === 1||Number(meetingData.type_id) === 3"></div>
+        <div class="tips-live live" v-if="Number(meetingData.type_id) === 2"></div>
         <img :src="meetingData.main_picture">
       </div>
       <div class="meeting-info">
         <h2 class="title">{{meetingData.conference_name}}</h2>
-        <div class="end-time">{{meetingData.dataDif}}</div>
+        <!--<div class="end-time" v-if="meetingData.startDif>0">{{meetingData.dataDif}}</div>-->
+        <div class="end-time" v-if="meetingData.startDif>0"><time-down @time-end="message = '已开始'" :endTime='meetingData.start_time'></time-down></div>
+        <div class="end-time" v-else-if="meetingData.startDif<0&&meetingData.endDif>0">正在进行</div>
+        <div class="end-time" v-else-if="meetingData.startDif<0&&meetingData.endDif<0">已结束</div>
         <div class="people-num">报名人数：{{meetingData.browseNum}}人</div>
-        <div class="time" v-if="meetingData.start_time">{{meetingData.start_time.slice(0, 10)}} - {{meetingData.end_time.slice(0, 10)}}</div>
+        <div class="time" v-if="meetingData.start_time">{{meetingData.start_time.split(" ")[0]}}至{{meetingData.end_time.split(" ")[0]}}</div>
         <div class="location">{{meetingData.conference_address}}</div>
         <div class="host">{{meetingData.conference_contact}}</div>
         <div class="tips-gohere"></div>
@@ -47,28 +51,30 @@
       </div>
       <!-- 底部fixed -->
       <div class="meeting-bottom five">
-        <div class="ico-box">
-          <i class="ico-kf"></i>
-          <span>客服</span>
-        </div>
-        <div class="ico-box">
-          <i class="ico-fav"></i>
+        <!--<div class="ico-box">-->
+          <!--<i class="ico-kf"></i>-->
+          <!--<span>客服</span>-->
+        <!--</div>-->
+        <div class="ico-box" @click="getCollect(meetingData.conference_id)">
+          <i :class="(collectionstate===true&&loginstate===true)?'ico-fav-red':'ico-fav'"></i>
           <span>收藏</span>
         </div>
         <div class="ico-box">
           <i class="ico-cart">
             <div class="tips-num">
-              <span>90+</span>
+              <!--<span></span>-->
             </div>
           </i>
           <span>购物车</span>
         </div>
-        <a class="btn btn-1">参与围观</a>
-        <a class="btn" @click="changeSpecIfShow">立即报名</a>
+        <div class="btn-box">
+          <a class="btn btn-2" :class="{'btn-1':(type_id==1||type_id==3)}" @click="Onlook(type_id)">参与围观</a>
+          <a class="btn btn-disable"  :class="{'bth-usable':isStart}" @click="changeSpecIfShow">立即报名</a>
+        </div>
       </div>
       <!-- 购买规格popup -->
-      <mt-popup v-model="popupVisible" position="bottom">
-        <goods-spec @emitEvent="buyNow"></goods-spec>
+      <mt-popup v-model="popupVisible" position="bottom" >
+        <goods-spec @emitEvent="buyNow" :goodInfo="meetingData"></goods-spec>
       </mt-popup>
     </div>
   </div>
@@ -76,21 +82,32 @@
 
 <script type="text/ecmascript-6">
 import { needMixin } from 'common/js/mixin'
+import { Toast,MessageBox } from 'mint-ui';
 import HeaderPub from 'base/header/header-pub'
 import GoodsSpec from 'base/goods-spec/goods-spec'
-import { getConferenceInfoByConID } from '@/api/api.js'
+import { getConferenceInfoByConID,createConferenceCollection,cancelCollection } from '@/api/api.js'
+import TimeDown from 'base/time-down/time-down'
 
 export default {
   mixins: [needMixin],
   components: {
     HeaderPub,
-    GoodsSpec
+    GoodsSpec,
+    Toast,
+    TimeDown
   },
   data () {
     return {
       curShowNav: 1, // 显示当前是哪个导航
       popupVisible: false, // 显示购买规格
-      meetingData: {}
+      optionUserInfo:{}, //用户信息
+      goodsData:{},
+      loginstate:false,//用户登录状态
+      collectionstate:false,//是否收藏
+      meetingData: {},
+      type_id:'',//会议类型
+      isStart:false,
+      message : '正在倒计时'
     }
   },
   created () {
@@ -98,12 +115,21 @@ export default {
   },
   methods: {
     _getAllData () {
-      getConferenceInfoByConID(this.$route.query).then((res) => {
+      var query=this.$route.query
+      this.type_id=query.type_id,
+      this.optionUserInfo=JSON.parse(sessionStorage.getItem("user"))
+      var token=this.optionUserInfo.user_token
+      getConferenceInfoByConID(this.$route.query,token).then((res) => {
         if (res.result === true && res.dataList) {
           this.meetingData = res.dataList[0] // 数据是个什么鬼
+          if(res.dataList[0].startDif > 0){
+            this.isStart=true
+          }
+          this.loginstate=this.meetingData.login
+          this.collectionstate=this.meetingData.collection
           console.log(this.meetingData)
         } else {
-          this.toast('您访问的内容不存在！')
+          this.toast('您访问的内容不存在')
           setTimeout(() => {
             this.$router.go(-1)
           }, 2000)
@@ -119,14 +145,62 @@ export default {
       // 模拟成功后跳转
       setTimeout(() => {
         this.loading.close()
-        this.$router.push({path: '/sure-order', query: {'id': 1}})
+        this.$router.push({path: '/sure-order', query: query})
       }, 500)
     },
     changeCurNav (index) { // 切换内容
       this.curShowNav = index
     },
     changeSpecIfShow () { // 是否显示购买规格操作
-      this.popupVisible = !this.popupVisible
+      if(this.isStart){
+        this.popupVisible = !this.popupVisible
+      }
+    },
+    getCollect(id){ //收藏
+//      this.loginstate=this.meetingData.login
+//      this.collectionstate=this.meetingData.collection
+      if(this.loginstate==false){
+        MessageBox.confirm('您暂时未登录或登录失效，是否现在登录？').then(action => {
+          this.$router.push({path: '/login_pwd'})
+        });
+        return
+      }
+//
+      if(this.loginstate==true&&this.collectionstate==false){
+        let token={token:this.optionUserInfo.user_token}
+        let query={con_id:id}
+        createConferenceCollection(query,token).then((res) => {
+          if (res.result === true && res.dataList==null) {
+            this.collectionstate=true
+            return
+          }
+          if (res.result === false){
+            this.toast(res.message)
+            return
+          }
+        })
+      }
+      if(this.loginstate==true&&this.collectionstate==true){
+        let token={token:this.optionUserInfo.user_token}
+        let query={collection_id:id}
+        cancelCollection(query,token).then((res) => {
+          if (res.result === true && res.dataList==null) {
+            this.collectionstate=false
+            return
+          }
+          if (res.result === false){
+            this.toast(res.message)
+            return
+          }
+        })
+      }
+
+    },
+    Onlook(type_id) {
+      Toast({
+        message: '正在维护',
+        duration: 1000
+      });
     }
   }
 }
@@ -173,7 +247,10 @@ export default {
       top: 10px
       width: 50px
       height: 20px
+    .tips-live.live
       background: url("~common/images/live@3x.png") 50% 50%/100% 100% no-repeat
+    .tips-live.scene
+      background: url("~common/images/scene@3x.png") 50% 50%/100% 100% no-repeat
   .meeting-info
     width: 100%
     padding: 8px 12px 12px 12px
@@ -286,10 +363,12 @@ export default {
           .name
             font-size: 14px
             line-height: 1.5
+            color: #5d5d5d
           .des
             font-size: 13px
             line-height: 2
             margin-top: 16px
+            color: #5d5d5d
   .meeting-bottom
     position: fixed
     z-index: 10
@@ -319,6 +398,8 @@ export default {
           background: url("~common/images/kf.png") 50% 50%/auto 100% no-repeat
         &.ico-fav
           background: url("~common/images/fav.png") 50% 50%/auto 96% no-repeat
+        &.ico-fav-red
+          background: url("~common/images/fav-red.png") 50% 50%/auto 96% no-repeat
         &.ico-cart
           background: url("~common/images/cart.png") 50% 50%/auto 102% no-repeat
       .tips-num
@@ -348,9 +429,21 @@ export default {
       background: #f53e3f
       color: #fff
       font-size: 16px
-    &.five
-      .btn
-        width: 105px
-      .btn-1
-        background: #fad34a
+  .btn-box
+    display:flex
+    width: 210px
+    .btn
+      flex:1
+      background: #f53e3f
+    .btn.btn-1
+      background: #fad34a
+      display: block
+    .btn-2
+      display:none
+    .btn-disable
+      background: #ADADAD
+    .btn.bth-usable
+      background: #f53e3f
+
+
 </style>

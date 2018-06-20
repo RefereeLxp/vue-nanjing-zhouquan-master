@@ -35,7 +35,8 @@ export default {
   },
   data () {
     return {
-      optionTracks: []
+      optionTracks: [],
+      optionUserInfo:{} //用户信息
     }
   },
   created () {
@@ -43,10 +44,10 @@ export default {
   },
   methods: {
     _getAllData () {
+      this.optionUserInfo=JSON.parse(sessionStorage.getItem("user"))
       let promise1 = new Promise((resolve, reject) => {
-        // 获取轮播数据
-        var obj={user_id:1};
-        findFootprintByUserId(obj).then((res) => {
+        var token=this.optionUserInfo.user_token
+        findFootprintByUserId(token).then((res) => {
 //          console.log(res)
           if (res.result === true) {
             this.optionTracks = res.dataList
@@ -64,6 +65,7 @@ export default {
 <style lang="stylus" rel="stylesheet/stylus">
 .my-list-box{
   margin-top: 1.4rem;
+  margin-bottom:1.5rem;
   width: 100%;
   .my-list-info{
     width: 100%;
@@ -101,6 +103,7 @@ export default {
           /*color: #F65858;*/
           i{
             font-size: 0.5rem ;
+            color: #F65858;
           }
         }
         .m-price{

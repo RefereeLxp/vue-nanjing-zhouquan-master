@@ -3,6 +3,7 @@
     <div class="box-all">
       <!-- header -->
       <div class="home-header">
+        <!--@click="nowCity"-->
         <div class="locat">{{curCity}}</div>
         <div class="model-input">
           <div class="search-swiper">
@@ -93,7 +94,8 @@ export default {
       loadType: 1, // 加载更多标签
       load: true,
       queryData: { // 查询文章数据
-        page: 1 // 参数1
+        pageSize  : 10, // 参数1
+        pageIndex :1
       },
       needScroll: true,
       allLoadEnd: false // 全部加载完成
@@ -110,7 +112,7 @@ export default {
       this.needScroll = false
       this.navActive = index
       // 初始化列表数据
-      this.queryData = Object.assign({}, { page: 1 })
+      this.queryData = Object.assign({}, { pageIndex: 1, pageSize:10})
       let query = Object.assign({}, this.queryData, this.optionNav[this.navActive])
       getNewsList(query).then((res) => {
         if (res.result === true && res.dataList) {
@@ -188,12 +190,13 @@ export default {
       })
     },
     loadMore () {
+      this.load = false
       this.load = true
-      this.queryData.page = this.queryData.page + 1
+      this.queryData.pageIndex  = this.queryData.pageIndex + 1
       let query = Object.assign({}, this.queryData, this.optionNav[this.navActive])
       getNewsList(query).then((res) => {
-        this.optionNewsList = this.optionNewsList.concat(res.data)
-        if (res.data.length < 10) { // 数据每页10条
+        this.optionNewsList = this.optionNewsList.concat(res.dataList)
+        if (res.dataList.length < 10) { // 数据每页10条
           this.load = true
           this.loadType = 2
         } else {
@@ -269,6 +272,7 @@ export default {
     display: flex
     padding-top: 6px
     padding-bottom: 6px
+    background: rgba(160, 160, 160, 0.5)
     .locat
       margin-left: 16px
       font-size: 16px

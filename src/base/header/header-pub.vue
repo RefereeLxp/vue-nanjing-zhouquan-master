@@ -72,7 +72,13 @@ export default {
   &.white
     background: #fff
     .go-back
-      bg-image("~common/images/goback")
+      bg-image("~common/images/goback-dark")
     .tit
       color: #333
+  &.red-txt
+   background: #fff
+   .go-back
+    bg-image("~common/images/goback-dark")
+   .tit
+    color: #F64F4F
 </style>

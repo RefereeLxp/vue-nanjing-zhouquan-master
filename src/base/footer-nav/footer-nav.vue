@@ -2,8 +2,9 @@
   <div class="footer-nav">
     <ul>
       <router-link to="/home" tag="li" class="nav-1"><i class="nav-1"></i><span>首页</span></router-link>
-      <router-link to="/site/index/sitemap" tag="li" class="nav-2"><i class="nav-2"></i><span>分类</span></router-link>
-      <li class="nav-3"><router-link to="/site/index/cart"><i class="nav-3"></i><span>购物车</span></router-link></li>
+      <!--<router-link to="/site/index/sitemap" tag="li" class="nav-2"><i class="nav-2"></i><span>分类</span></router-link>-->
+      <router-link to="/classify" tag="li" class="nav-2"><i class="nav-2"></i><span>分类</span></router-link>
+      <router-link to="/cart" tag="li" class="nav-3"><i class="nav-3"></i><span>购物车</span></router-link>
       <!--<li class="nav-4"><a :href="addElHref('/ucenter/index')"><i class="nav-4"></i><span>我的</span></a></li>-->
       <router-link to="/mine" tag="li" class="nav-4"><i class="nav-4"></i><span>我的</span></router-link>
     </ul>

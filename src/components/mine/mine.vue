@@ -1,6 +1,6 @@
 <template>
   <div class="mine child-view">
-    <div class="mine-all">
+    <div class="mine-all" v-if="optionUserInfo">
       <!--用户基本信息+设置-->
       <div class="user-card">
         <div class="user-card-info">
@@ -10,11 +10,11 @@
           <div class="user-info">
             <div class="user-info-box">
               <div class="icon">
-                <img src="../../common/images/zfb.png" alt="">
+                <img :src="optionUserInfo.user_headimg" alt="">
               </div>
               <div class="txt">
-                <p class="name">昵称</p>
-                <p class="hint">随便说点什么<i class="icon iconfont icon-xiezi"></i></p>
+                <p class="name" v-text="optionUserInfo.user_name"></p>
+                <!--<p class="hint">随便说点什么<i class="icon iconfont icon-xiezi"></i></p>-->
               </div>
             </div>
           </div>
@@ -22,15 +22,15 @@
             <router-link  to="/my_collect" class="type">
               <span>
                 <i class="icon iconfont icon-xin1"></i>
-                我的收藏(7)
+                我的收藏
               </span>
             </router-link>
-            <div class="type">
+            <router-link  to="/my_tracks" class="type">
               <span>
                 <i class="icon iconfont icon-zuji"></i>
                 我的足迹
               </span>
-            </div>
+            </router-link>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@
         </div>
       </div>
       <div class="group-box" v-if="groupList.length>0">
-        <mt-cell v-for="(item, index) in groupList" class="group-box-info" :title="item.name" is-link>
+        <mt-cell v-for="(item, index) in groupList" class="group-box-info" :title="item.name" :to="item.url"  is-link>
           <i slot="icon" :class="item.icon" class="icon iconfont"></i>
         </mt-cell>
       </div>
@@ -69,13 +69,15 @@ export default {
   },
   data () {
     return {
+//      用户菜单
       groupList:[
-        {group_id:1,name:'待评价',icon:'icon-evaluate-1-copy'},
-        {group_id:2,name:'收获地址',icon:'icon-unie65c'},
-        {group_id:3,name:'发票管理',icon:'icon-piaowu'},
-        {group_id:4,name:'关于我们',icon:'icon-guanyuwomen'},
-        {group_id:5,name:'意见反馈',icon:'icon-yijian'}
-      ]
+        {group_id:1,name:'全部订单',icon:'icon-evaluate-1-copy',url:'/order'},
+        {group_id:2,name:'收获地址',icon:'icon-unie65c',url:'/my_profile'},
+        {group_id:3,name:'发票管理',icon:'icon-piaowu',url:'/my_profile'},
+        {group_id:4,name:'关于我们',icon:'icon-guanyuwomen',url:'/my_profile'},
+        {group_id:5,name:'意见反馈',icon:'icon-yijian',url:'/my_profile'}
+      ],
+      optionUserInfo:[]
     }
   },
   created () {
@@ -83,6 +85,8 @@ export default {
   },
   methods: {
     _getAllData () { // 数据获取
+      this.optionUserInfo=JSON.parse(sessionStorage.getItem("user"))
+      console.log(this.optionUserInfo);
     }
   }
 }
@@ -98,6 +102,7 @@ body,html{
 }
 .mine-all{
   width: 100%;
+  margin-bottom:1.5rem;
   .user-card{
     width: 100%;
     height: 200px;

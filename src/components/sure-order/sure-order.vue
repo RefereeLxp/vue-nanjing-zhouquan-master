@@ -2,14 +2,14 @@
   <div class="sure-order child-view">
     <header-pub headerTitle="确认订单"></header-pub>
     <!-- 商品 -->
-    <a class="sure-goods">
+    <a class="sure-goods" v-if="JSON.stringify(this.goodsInfo)!='{}'">
       <div class="img-box">
-        <img src="http://img10.360buyimg.com/n7/jfs/t15772/297/2379608599/113987/f4771417/5ab0709fN7554e959.jpg">
+        <img :src="goodsInfo.main_picture">
       </div>
       <div class="info-box">
-        <h2 class="name">2018区块链拥抱未来全球高峰论坛</h2>
-        <div class="tips">数量：x2&nbsp;&nbsp;票种：A座</div>
-        <div class="price">¥45.5</div>
+        <h2 class="name">{{goodsInfo.conference_name}}</h2>
+        <div class="tips">数量：x{{goodsInfo.counts}}&nbsp;&nbsp;票种：{{goodsInfo.price_title}}</div>
+        <div class="price">¥{{goodsInfo.original_price*goodsInfo.counts}}</div>
       </div>
     </a>
     <!-- 收获地址 -->
@@ -17,7 +17,7 @@
       <div class="title">
         <h2>收获地址</h2>
       </div>
-      <div class="adress-box info-box">
+      <div class="adress-box info-box" v-if="optionShoppingAddress!=null">
         <div class="address-1">
           <span class="name">杨刚</span>
           <span class="pho">13813007120</span>
@@ -28,6 +28,9 @@
           <p>浙江省杭州市东方文化园金色大厅旁边的水世界二楼找叫王小星的人收</p>
         </div>
       </div>
+      <div class="add-box"  v-if="optionShoppingAddress==null">
+        <i class="icon iconfont icon-tianjia"></i>{{addAddress}}
+      </div>
     </div>
      <!-- 发票 -->
     <div class="sure-fp card-box">
@@ -37,7 +40,7 @@
           <mt-switch v-model="needFp"></mt-switch>
         </div>
       </div>
-      <div class="info-fp" :class="{need: needFp}">
+      <div class="info-fp"  v-if="optionInvoice!=null" :class="{need: needFp}">
         <div class="fp-box info-box">
           <div class="fp-1">
             <span class="name">南京xx信息技术有限责任公司</span><div class="i-trans"><span class="trans">默认</span></div>
@@ -48,6 +51,9 @@
           </div>
           <div class="fp-type fp-type-1"></div> <!-- fp-type-1 纸质 fp-type-2 电子 根据数据状态值获取 -->
         </div>
+      </div>
+      <div class="add-box info-fp"  v-if="optionInvoice==null"  :class="{need: needFp}">
+        <i class="icon iconfont icon-tianjia"></i>{{addAddress}}
       </div>
     </div>
      <!-- 支付 -->
@@ -66,8 +72,8 @@
     </div>
     <!-- 底部fix -->
     <div class="sure-btn">
-      <div class="sum-box">总计：<span class="sum">¥3000.00</span></div>
-      <div class="submit-btn">确认支付</div>
+      <div class="sum-box">总计：<span class="sum">¥{{goodsInfo.original_price*goodsInfo.counts}}</span></div>
+      <div class="submit-btn" @click="ConfirmPay">确认支付</div>
     </div>
   </div>
 </template>
@@ -75,6 +81,8 @@
 <script type="text/ecmascript-6">
 import { needMixin } from 'common/js/mixin'
 import HeaderPub from 'base/header/header-pub'
+import { Toast }  from 'mint-ui'
+import { ConfirmConferenceOrder,CreateOrder } from '@/api/api.js'
 export default {
   mixins: [needMixin],
   components: {
@@ -84,25 +92,101 @@ export default {
     return {
       needFp: false, // 是否需要发票
       chooseZfType: '1', // 支付类型
+      addAddress:'添加收货地址',
+      addInvoice:'添加单位信息',
+      goodsInfo:{}, //商品信息
+      optionUserInfo:{},//用户信息
+      optionInvoice:{}, //发票信息
+      optionShoppingAddress:{}, //收货地址
       optionsZf: [ // 支付选择 图标固定死了
         {
           label: '微信支付',
           value: '1'
-        },
-        {
-          label: '支付宝',
-          value: '2'
-        },
-        {
-          label: '对公转账',
-          value: '3'
         }
+//        {
+//          label: '支付宝',
+//          value: '2'
+//        },
+//        {
+//          label: '对公转账',
+//          value: '3'
+//        }
       ]
     }
   },
   created () {
+    this._getAllData()
   },
   methods: {
+    _getAllData () {
+      this.optionUserInfo=JSON.parse(sessionStorage.getItem("user"))
+      this.goodsInfo=this.$route.query
+      console.log(this.optionUserInfo.user_token)
+      let promise1 = new Promise((resolve, reject) => {
+        ConfirmConferenceOrder(this.optionUserInfo.user_token).then((res) => {
+          if (res.result === true && res.dataList) {
+            this.optionInvoice=res.dataList.invoice
+            this.optionShoppingAddress=res.dataList.shopping_address
+          } else {
+//            this.toast('您访问的内容不存在')
+//            setTimeout(() => {
+//              this.$router.go(-1)
+//            }, 2000)
+          }
+        })
+      })
+    },
+    ConfirmPay () {
+      if(this.needFp==true&&this.optionShoppingAddress==null){
+        Toast({
+          message: '请添加收货地址',
+          duration: 1000
+        });
+        return
+      }
+      if(this.needFp==true&&this.optionInvoice==null){
+        Toast({
+          message: '请添加单位信息',
+          duration: 1000
+        });
+        return
+      }
+      if(this.needFp==false){
+        var query=this.goodsInfo
+//        token   conference_id price_id counts remark address_id invoice_id pay_type
+        this.goodsInfo.token=this.optionUserInfo.user_token
+        this.goodsInfo.pay_type=2
+        console.log(this.goodsInfo)
+        CreateOrder(query).then((res) => {
+          if (res.result === false && res.dataList==null) {
+            console.log(222)
+            this.toast({
+              message:res.message,
+              duration: 3000
+            })
+            return
+          }
+          if (res.result === true && res.dataList==null) {
+            this.$router.push({path: '/finish'})
+            return
+          }
+          if(res.result === true && res.dataList!=null){
+            this.$router.push({path: '/payment',query:res.dataList})
+            return
+          }
+//          else {
+////            this.toast('您访问的内容不存在')
+////            setTimeout(() => {
+////              this.$router.go(-1)
+////            }, 2000)
+//          }
+        })
+      }
+//      Toast({
+//        message: '正在调取接口',
+//        duration: 5000
+//      });
+    }
   },
   watch: {
   }
@@ -360,4 +444,24 @@ export default {
       font-size: 16px
       letter-spacing: 0.5px
       width: 185px
+
+.add-box
+  width:100%
+  margin:0 auto
+  text-align: center
+  color: #FF3636
+  font-size:0.42rem
+  padding:12px 0
+  border-top:1px solid #E4E4E4
+  i
+    font-size:0.38rem
+    margin-right: 5px
+
+.sure-order .sure-fp .info-fp.add-box
+  padding:0
+  color:#fff
+.sure-order .sure-fp .info-fp.add-box.need
+  padding:0
+  color: #FF3636
+  line-height: 82px
 </style>
